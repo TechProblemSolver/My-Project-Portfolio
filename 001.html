@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv content="width: device-width; 1px">
+        <title>Job Application Form</title>
+        <style>
+            b {
+                color: red;
+            }
+            input, select, button {
+                border: 1px solid black;
+                border-radius: 16px;
+                padding: 10px;
+                margin: 10px;
+            }
+            button {
+                color: white;
+                background-color: green;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <hgroup>
+                <h1 id="formType">Job Application Form</h1>
+                <p><i>Please fill in the blank with</i> <b>*</b></p>
+            </hgroup>
+            <div id="readOnly"></div>
+        </header>
+        <section>
+            <fieldset>
+                <legend><h2>Contact Details</h2></legend>
+                <form id="contactForm">
+                    <label for="name"><b>*</b> Name: </label>
+                    <input type="text" id="name" placeholder="Full Name">
+                    <br>
+                    <label for="email"><b>*</b> Email: </label>
+                    <input type="email" id="email" placeholder="example@gmail.com">
+                    <br>
+                    <label for="gender"><b>*</b> Gender: </label>
+                    <select>
+                        <option></option>
+                        <option>Male</option>
+                        <option>Female</option>
+                    </select>
+                    <br>
+                    <label for="phone">Phone Number: </label>
+                    <input type="tel" id="phone" placeholder="000-0000-0000">
+                    <br>
+                </form>
+            </fieldset>
+            <fieldset>
+                <legend><h2>Job Details</h2></legend>
+                <form id="jobForm">
+                    <label for="job"><b>*</b> Job: </label>
+                    <input type="text" id="job" placeholder="Enter Job">
+                    <br>
+                    <label for="practice"><b>*</b> Study Area: </label>
+                    <input type="text" id="practice" placeholder="Enter Study Area">
+                    <br>
+                    <label for="approve">Certificate: </label>
+                    <input type="file" id="approve" placeholder="Choose File">
+                    <br>
+                </form>
+            </fieldset>
+            <button id="send" onclick="send()">Submit</button>
+            <script>
+                function readTrue() {
+                    const readOnlyAlert = document.getElementById('readOnly')
+                    readOnlyAlert.innerHTML=`This is a read-only file. You cannot edit this. Reloading the page will allow you to send another one.`
+                    readOnlyAlert.style.color='grey'
+                    readOnlyAlert.style.padding='5px'
+                    readOnlyAlert.style.borderRadius='8px'
+                    readOnlyAlert.style.border='5px solid darkblue'
+                    readOnlyAlert.style.margin='10px'
+                }
+                function send() {
+                    const NAME = document.getElementById('name').readOnly=true;
+                    const EMAIL = document.getElementById('email').readOnly=true;
+                    const phone = document.getElementById('phone').readOnly=true;
+                    const job = document.getElementById('job').readOnly=true;
+                    const studyArea = document.getElementById('practice').readOnly=true;
+                    readTrue()
+                    const gender = document.getElementById('gender').style.display='none';
+                    const certificate = document.getElementById('approve').style.display='none';
+                }
+            </script>
+        </section>
+    </body>
+</html>

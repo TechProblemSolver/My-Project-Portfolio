@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Password Strength Checker</title>
+        <style>
+            div {
+                border: 1px solid black;
+                padding: 12px;
+                border-radius: 4px;
+            }
+            input {
+                border-radius: 4px;
+                padding: 5px;
+                width: 350px;
+                border: 1px solid black;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Password Strength Checker</h1>
+        <div style="display: flex; width: 500px;">
+            <div style="border: 0px; margin-top: 50px;">
+                <label for="password">Password: </label><input type="text" name="password" id="password" oninput="checkPassword()" placeholder="Enter Password" maxlength="15"/><br><br>
+                <div id="result">
+                    <p id="checkStrength"></p>
+                </div>
+            </div>
+            <div id="padlockEmoji" style="border: 0px;">
+                <span><h1 style="font-size: 5.5rem;">🔐</h1></span>
+            </div>
+        </div>
+        <script>
+            function checkPassword() {
+                let password = document.getElementById('password').value;
+                let strength = document.getElementById('checkStrength');
+                if (!password) {
+                    strength.innerHTML=''
+                } else if (password.includes(' ')) {
+                    password.length-1
+                } else if (password.length < 5 && password.length > 0) {
+                    strength.innerHTML='Weak'
+                } else if (password.length > 8 && password.length < 5) {
+                    strength.innerHTML='Okay'
+                } else if (password.length > 9 && password.length < 10) {
+                    strength.innerHTML='Good'
+                } else if (password.length < 8 && password.length > 11) {
+                    strength.innerHTML='Good'
+                }  else if (password.length < 11 && password.length > 13) {
+                    strength.innerHTML='Good'
+                } 
+            }
+        </script>
+    </body>
+</html>
