@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, simpledialog, filedialog
 from PIL import Image, ImageTk
+import cv2
 import socket
 import threading
 import os
@@ -24,6 +25,10 @@ class App:
         image_button = tk.Button(self.root, text="Send Image", command=self.send_image)
         image_button.pack(side=tk.LEFT, padx=10, pady=10)
         image_button.config(bg="blue", fg="white")
+
+        video_button = tk.Button(self.root, text="Send Video", command=self.send_video)
+        video_button.pack(side=tk.LEFT, padx=10, pady=10)
+        video_button.config(bg="red", fg="white")
 
         scrollbar = ttk.Scrollbar(self.root, command=self.chat_area.yview)
         self.chat_area.config(yscrollcommand=scrollbar.set)
@@ -59,8 +64,19 @@ class App:
                 image_name = os.path.basename(file_path)
                 self.client_socket.send(f"{self.username}:IMAGE:{image_name}".encode('utf-8'))
                 self.client_socket.sendall(image_data)
-                self.update_chat_area(f"{self.username} sent an image: \n\n")
+                self.update_chat_area(f"{self.username} sent an image: {image_name}")
                 self.display_image(file_path)
+
+    def send_video(self):
+        file_path = filedialog.askopenfilename()
+        if file_path:
+            with open(file_path, 'rb') as file:
+                video_data = file.read()
+                video_name = os.path.basename(file_path)
+                self.client_socket.send(f"{self.username}:VIDEO:{video_name}".encode('utf-8'))
+                self.client_socket.sendall(video_data)
+                self.update_chat_area(f"{self.username} sent a video: {video_name}")
+                self.display_video(file_path)
 
     def receive_messages(self):
         while True:
@@ -76,8 +92,20 @@ class App:
                         image_data += chunk
                     with open(image_name, 'wb') as file:
                         file.write(image_data)
-                    self.update_chat_area(f"{username} sent an image: \n\n")
+                    self.update_chat_area(f"{username} sent an image: {image_name}")
                     self.display_image(image_name)
+                elif "VIDEO:" in message:
+                    username, _, video_name = message.partition(":VIDEO:")
+                    video_data = b""
+                    while True:
+                        chunk = self.client_socket.recv(1024)
+                        if not chunk:
+                            break
+                        video_data += chunk
+                    with open(video_name, 'wb') as file:
+                        file.write(video_data)
+                    self.update_chat_area(f"{username} sent a video: {video_name}")
+                    self.display_video(video_name)
                 else:
                     self.update_chat_area(message)
             except Exception as e:
@@ -95,7 +123,26 @@ class App:
         img = ImageTk.PhotoImage(img)
         self.chat_area.image_create(tk.END, image=img)
         self.chat_area.insert(tk.END, '\n')
-        self.chat_area.image.append(img) 
+        self.chat_area.image.append(img)  # Keep a reference to avoid garbage collection
+
+    def display_video(self, video_path):
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            print("Error: Could not open video.")
+            return
+
+        def play_video():
+            while cap.isOpened():
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                cv2.imshow(video_path, frame)
+                if cv2.waitKey(25) & 0xFF == ord('q'):
+                    break
+            cap.release()
+            cv2.destroyAllWindows()
+
+        threading.Thread(target=play_video).start()
 
 if __name__ == "__main__":
     App()
