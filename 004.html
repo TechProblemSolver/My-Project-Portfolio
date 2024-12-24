@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Flashcard App</title>
+        <style>
+            button {
+                background-color: rgb(101, 255, 101);
+                border: 1px solid black;
+                padding: 12px;
+                margin: 6px;
+                border-radius: 5px;
+                box-shadow: 1px 1px 5px black;
+            }
+            button:hover {
+                background-color: rgb(137, 255, 137);
+                box-shadow: 0px 0px 5px black;
+            }
+            #flashcardHolder {
+                background-color: lightskyblue;
+                border: 1px solid black;
+                border-radius: 4px;
+                color: black;
+                padding: 100px;
+            }
+            .flashcard {
+                background-color: white;
+                color: black;
+                border-radius: 4px;
+                padding: 20px;
+                margin: 12px;
+                transition: all 1s;
+                width: 500px;
+                height: 300px;
+                visibility: hidden;
+                opacity: 0;
+            }
+            .flashcard.show {
+                visibility: visible;
+                opacity: 1;
+            }
+            .flashcard.hide {
+                visibility: hidden;
+                opacity: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <center>
+            <h1>Flashcard Learning App</h1>
+            <p>Learn MATH the easy way.</p>
+            <button id="startQuiz" disabled="true" onclick="getQ()">Start Quiz</button>
+        </center>
+        <div id="flashcardHolder">
+            <center>
+                <div id="Flashcard" class="flashcard" onclick="getANS()">
+                    <center><h1 style="color: grey; margin-top: 120px;">Start Quiz!</h1></center>
+                </div>
+            </center>
+            <button id="nextBTN" disabled="true" onclick="nextQuestion()">Next &rightarrow;</button><br>
+            <label for="color">Pick Color: </label><input type="color" id="color" onclick="activateStart()">
+        </div>
+        <script>
+            const flashcard = document.getElementById('Flashcard');
+            const startBtn = document.getElementById('startQuiz');
+            const color = document.getElementById('color');
+            const nextBtn = document.getElementById('nextBTN');
+
+            function activateStart() {
+                startBtn.disabled = false;
+            }
+
+            function getQ() {
+                flashcard.style.backgroundColor = color.value;
+                flashcard.classList.add('show');
+                flashcard.classList.add('hide');
+                flashcard.classList.toggle('show');
+                startBtn.disabled = true;
+                nextBtn.disabled = false;
+                nextQuestion();
+            }
+
+            function nextQuestion() {
+                let num1 = Math.round(Math.random() * 100);
+                let num2 = Math.round(Math.random() * 100);
+                localStorage['num1'] = num1;
+                localStorage['num2'] = num2;
+                flashcard.classList.add('show');
+                flashcard.classList.remove('hide');
+                flashcard.innerHTML = `<center><h1 style="color: black; margin-top: 120px;">${num1} + ${num2}</h1></center>`;
+            }
+
+            function getANS() {
+                flashcard.classList.add('show');
+                flashcard.classList.add('hide');
+                flashcard.classList.toggle('hide');
+                flashcard.innerHTML = `<center><h1 style="color: black; margin-top: 120px;">The answer is: <i style="color: green;">${parseInt(localStorage['num1']) + parseInt(localStorage['num2'])}</i></h1></center>`;
+                flashcard.classList.toggle('show');
+                localStorage.removeItem('num1');
+                localStorage.removeItem('num2');
+            }
+        </script>
+    </body>
+</html>
