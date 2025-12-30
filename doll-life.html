@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dollhouse Family Game</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    .dollhouse {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 8px;
+      background: #8b4513;
+      padding: 12px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    
+    .room {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      min-height: 280px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 3px solid transparent;
+    }
+    
+    .room:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    .room.active {
+      border-color: #ec4899;
+      box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.2);
+    }
+    
+    .doll-character {
+      position: relative;
+      width: 80px;
+      height: 160px;
+      margin: 10px;
+      cursor: grab;
+      transition: transform 0.2s ease;
+      user-select: none;
+    }
+    
+    .doll-character:hover {
+      transform: scale(1.05);
+    }
+    
+    .doll-character.selected {
+      transform: scale(1.1);
+      filter: drop-shadow(0 0 8px rgba(236, 72, 153, 0.6));
+    }
+    
+    .doll-character.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+    
+    .clothing-item {
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 3px solid transparent;
+    }
+    
+    .clothing-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    }
+    
+    .clothing-item.selected {
+      border-color: #ec4899;
+      box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.2);
+    }
+    
+    .tab-btn {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    
+    .tab-btn:hover {
+      transform: translateY(-2px);
+    }
+    
+    .furniture-item {
+      position: absolute;
+      cursor: move;
+    }
+    
+    .bedroom-bg {
+      background: linear-gradient(180deg, #fce7f3 0%, #fbcfe8 100%);
+    }
+    
+    .kitchen-bg {
+      background: linear-gradient(180deg, #fef3c7 0%, #fde68a 100%);
+    }
+    
+    .living-bg {
+      background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%);
+    }
+    
+    .bathroom-bg {
+      background: linear-gradient(180deg, #e0f2fe 0%, #bae6fd 100%);
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full">
+  <div class="w-full h-full bg-gradient-to-br from-rose-100 via-pink-100 to-purple-100 overflow-auto">
+   <div class="max-w-7xl mx-auto px-4 py-6"><!-- Header -->
+    <header class="text-center mb-6">
+     <h1 id="game-title" class="text-5xl font-bold text-pink-600 mb-2">🏠 Dollhouse Family Game</h1>
+     <p id="family-name" class="text-2xl text-purple-600">The Anderson Family</p>
+    </header>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6"><!-- City View / Interior View -->
+     <div class="lg:col-span-2"><!-- City View -->
+      <div id="city-view" class="bg-gradient-to-b from-sky-400 via-sky-300 to-green-200 rounded-3xl shadow-2xl p-6 min-h-[600px] relative">
+       <div class="text-center mb-4">
+        <h2 class="text-3xl font-bold text-white drop-shadow-lg">🏙️ Anderson City</h2>
+        <p class="text-white drop-shadow">Click on any building to see inside!</p>
+       </div><!-- Sun -->
+       <div class="absolute top-8 right-12">
+        <div class="w-20 h-20 rounded-full bg-yellow-300 shadow-lg"></div>
+       </div><!-- Clouds -->
+       <div class="absolute top-16 left-20">
+        <div class="flex gap-2">
+         <div class="w-12 h-8 rounded-full bg-white opacity-80"></div>
+         <div class="w-16 h-10 rounded-full bg-white opacity-80 -ml-6"></div>
+         <div class="w-12 h-8 rounded-full bg-white opacity-80 -ml-6"></div>
+        </div>
+       </div><!-- Road -->
+       <div class="absolute bottom-0 left-0 right-0 h-32 bg-gray-700">
+        <div class="absolute top-1/2 left-0 right-0 h-2 border-t-4 border-dashed border-yellow-400"></div>
+       </div><!-- Buildings -->
+       <div class="absolute bottom-32 left-0 right-0 flex justify-around items-end px-8 gap-4"><!-- House -->
+        <div class="building cursor-pointer hover:scale-105 transition-transform" data-building="home" title="Click to enter the house">
+         <div class="relative"><!-- Roof -->
+          <div class="w-0 h-0 border-l-[80px] border-l-transparent border-r-[80px] border-r-transparent border-b-[50px] border-b-red-600"></div><!-- House Body -->
+          <div class="w-40 h-48 bg-yellow-100 border-4 border-yellow-200 relative"><!-- Door -->
+           <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-20 bg-amber-800 rounded-t-lg"></div>
+           <div class="absolute bottom-10 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-yellow-500"></div><!-- Windows -->
+           <div class="absolute top-8 left-4 w-10 h-10 bg-sky-200 border-2 border-sky-400"></div>
+           <div class="absolute top-8 right-4 w-10 h-10 bg-sky-200 border-2 border-sky-400"></div>
+          </div>
+          <div class="text-center mt-2 font-bold text-gray-700">
+           🏠 Home
+          </div>
+         </div>
+        </div><!-- Park -->
+        <div class="building cursor-pointer hover:scale-105 transition-transform" data-building="park" title="Click to visit the park">
+         <div class="relative"><!-- Trees -->
+          <div class="flex gap-4 mb-4">
+           <div class="flex flex-col items-center">
+            <div class="w-16 h-16 rounded-full bg-green-600"></div>
+            <div class="w-4 h-12 bg-amber-800"></div>
+           </div>
+           <div class="flex flex-col items-center">
+            <div class="w-20 h-20 rounded-full bg-green-500"></div>
+            <div class="w-5 h-16 bg-amber-900"></div>
+           </div>
+           <div class="flex flex-col items-center">
+            <div class="w-16 h-16 rounded-full bg-green-600"></div>
+            <div class="w-4 h-12 bg-amber-800"></div>
+           </div>
+          </div><!-- Grass -->
+          <div class="w-44 h-12 bg-green-400 rounded-t-3xl"></div>
+          <div class="text-center mt-2 font-bold text-gray-700">
+           🌳 Park
+          </div>
+         </div>
+        </div><!-- Store -->
+        <div class="building cursor-pointer hover:scale-105 transition-transform" data-building="store" title="Click to enter the store">
+         <div class="relative"><!-- Awning -->
+          <div class="w-40 h-8 bg-red-500 border-b-4 border-red-600"></div><!-- Store Body -->
+          <div class="w-40 h-44 bg-blue-100 border-4 border-blue-200 relative"><!-- Door -->
+           <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-14 h-24 bg-sky-800"></div><!-- Windows -->
+           <div class="absolute top-4 left-2 right-2 h-16 bg-sky-300 border-2 border-sky-500"></div><!-- Sign -->
+           <div class="absolute top-20 left-1/2 -translate-x-1/2 bg-white px-2 py-1 rounded text-xs font-bold">
+            SHOP
+           </div>
+          </div>
+          <div class="text-center mt-2 font-bold text-gray-700">
+           🏪 Store
+          </div>
+         </div>
+        </div><!-- School -->
+        <div class="building cursor-pointer hover:scale-105 transition-transform" data-building="school" title="Click to enter the school">
+         <div class="relative"><!-- Bell Tower -->
+          <div class="absolute top-0 left-1/2 -translate-x-1/2 -mt-8 flex flex-col items-center">
+           <div class="w-6 h-2 bg-gray-600"></div>
+           <div class="w-4 h-6 bg-gray-700"></div>
+           <div class="text-xl">
+            🔔
+           </div>
+          </div><!-- Roof -->
+          <div class="w-0 h-0 border-l-[75px] border-l-transparent border-r-[75px] border-r-transparent border-b-[40px] border-b-gray-600"></div><!-- School Body -->
+          <div class="w-36 h-40 bg-red-400 border-4 border-red-500 relative"><!-- Door -->
+           <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-16 bg-amber-900"></div><!-- Windows -->
+           <div class="absolute top-6 left-3 w-8 h-8 bg-yellow-200 border-2 border-yellow-400"></div>
+           <div class="absolute top-6 right-3 w-8 h-8 bg-yellow-200 border-2 border-yellow-400"></div>
+          </div>
+          <div class="text-center mt-2 font-bold text-gray-700">
+           🏫 School
+          </div>
+         </div>
+        </div>
+       </div>
+      </div><!-- Interior View (Hidden by default) -->
+      <div id="interior-view" class="bg-gradient-to-b from-amber-800 to-amber-900 rounded-3xl shadow-2xl p-6 hidden">
+       <div class="flex justify-between items-center mb-4"><button id="back-to-city" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition-all"> ← Back to City </button>
+        <h2 id="current-location" class="text-2xl font-bold text-white"></h2>
+        <div class="w-24"></div>
+       </div>
+       <div class="dollhouse"><!-- Bedroom -->
+        <div class="room bedroom-bg" data-room="bedroom">
+         <div class="absolute top-2 left-2 text-xs font-bold text-pink-700">
+          💗 BEDROOM
+         </div>
+         <svg class="absolute bottom-8 right-8" width="80" height="50" viewbox="0 0 80 50"><rect x="5" y="20" width="70" height="25" rx="3" fill="#c084fc" /> <rect x="0" y="15" width="80" height="8" rx="2" fill="#a855f7" /> <rect x="8" y="5" width="20" height="15" rx="2" fill="#e9d5ff" /> <rect x="2" y="45" width="6" height="5" fill="#7c3aed" /> <rect x="72" y="45" width="6" height="5" fill="#7c3aed" />
+         </svg>
+         <svg class="absolute top-16 right-8" width="50" height="40" viewbox="0 0 50 40"><rect x="0" y="0" width="50" height="40" rx="2" fill="#92400e" /> <rect x="5" y="5" width="18" height="12" rx="1" fill="#78350f" /> <rect x="27" y="5" width="18" height="12" rx="1" fill="#78350f" /> <rect x="5" y="22" width="18" height="12" rx="1" fill="#78350f" /> <rect x="27" y="22" width="18" height="12" rx="1" fill="#78350f" /> <circle cx="14" cy="11" r="1.5" fill="#fbbf24" /> <circle cx="36" cy="11" r="1.5" fill="#fbbf24" />
+         </svg>
+         <div id="bedroom-dolls" class="absolute bottom-4 left-4 flex flex-wrap gap-2"></div>
+        </div><!-- Kitchen -->
+        <div class="room kitchen-bg" data-room="kitchen">
+         <div class="absolute top-2 left-2 text-xs font-bold text-yellow-700">
+          🍳 KITCHEN
+         </div>
+         <svg class="absolute top-16 left-8" width="50" height="45" viewbox="0 0 50 45"><rect x="0" y="0" width="50" height="45" rx="2" fill="#374151" /> <circle cx="12" cy="12" r="6" fill="#1f2937" stroke="#6b7280" stroke-width="1" /> <circle cx="38" cy="12" r="6" fill="#1f2937" stroke="#6b7280" stroke-width="1" /> <rect x="5" y="28" width="40" height="12" rx="2" fill="#4b5563" /> <circle cx="45" cy="34" r="2" fill="#ef4444" />
+         </svg>
+         <svg class="absolute bottom-8 right-8" width="70" height="50" viewbox="0 0 70 50"><ellipse cx="35" cy="15" rx="30" ry="15" fill="#92400e" /> <rect x="10" y="15" width="6" height="30" fill="#78350f" /> <rect x="54" y="15" width="6" height="30" fill="#78350f" />
+         </svg>
+         <div id="kitchen-dolls" class="absolute bottom-4 left-4 flex flex-wrap gap-2"></div>
+        </div><!-- Living Room / Park / Store Area / Classroom -->
+        <div class="room living-bg" data-room="living">
+         <div class="absolute top-2 left-2 text-xs font-bold text-blue-700" id="room-3-label">
+          📺 LIVING ROOM
+         </div>
+         <svg class="absolute bottom-12 left-8" width="80" height="40" viewbox="0 0 80 40" id="room-3-furniture-1"><rect x="5" y="15" width="70" height="20" rx="3" fill="#3b82f6" /> <rect x="0" y="10" width="10" height="25" rx="2" fill="#2563eb" /> <rect x="70" y="10" width="10" height="25" rx="2" fill="#2563eb" /> <rect x="10" y="8" width="60" height="10" rx="2" fill="#60a5fa" />
+         </svg>
+         <svg class="absolute top-16 right-8" width="50" height="40" viewbox="0 0 50 40" id="room-3-furniture-2"><rect x="8" y="0" width="34" height="25" rx="2" fill="#1f2937" /> <rect x="10" y="2" width="30" height="21" fill="#3b82f6" /> <rect x="20" y="25" width="10" height="8" fill="#4b5563" /> <rect x="5" y="33" width="40" height="3" rx="1" fill="#6b7280" />
+         </svg>
+         <div id="living-dolls" class="absolute bottom-4 left-4 flex flex-wrap gap-2"></div>
+        </div><!-- Bathroom / School Library -->
+        <div class="room bathroom-bg" data-room="bathroom">
+         <div class="absolute top-2 left-2 text-xs font-bold text-cyan-700" id="room-4-label">
+          🛁 BATHROOM
+         </div>
+         <svg class="absolute bottom-8 left-8" width="60" height="35" viewbox="0 0 60 35" id="room-4-furniture-1"><ellipse cx="30" cy="20" rx="28" ry="12" fill="#e0f2fe" /> <rect x="2" y="20" width="56" height="10" fill="#bae6fd" /> <circle cx="5" cy="30" r="3" fill="#0891b2" /> <circle cx="55" cy="30" r="3" fill="#0891b2" />
+         </svg>
+         <svg class="absolute top-16 right-8" width="40" height="35" viewbox="0 0 40 35" id="room-4-furniture-2"><rect x="0" y="15" width="40" height="3" fill="#94a3b8" /> <ellipse cx="20" cy="20" rx="15" ry="8" fill="#f1f5f9" /> <rect x="18" y="8" width="4" height="12" fill="#cbd5e1" /> <path d="M 20 0 L 18 8 L 22 8 Z" fill="#94a3b8" />
+         </svg>
+         <div id="bathroom-dolls" class="absolute bottom-4 left-4 flex flex-wrap gap-2"></div>
+        </div>
+       </div>
+      </div>
+     </div><!-- Control Panel -->
+     <div class="bg-white rounded-3xl shadow-xl p-6">
+      <h2 class="text-2xl font-bold text-center text-pink-600 mb-4">👨‍👩‍👧‍👦 Family &amp; Wardrobe</h2><!-- Character Selection -->
+      <div class="mb-6">
+       <h3 class="text-lg font-semibold text-gray-700 mb-3">Select Character:</h3>
+       <div class="grid grid-cols-2 gap-3" id="character-selection"></div>
+      </div><!-- Building Location Control -->
+      <div class="mb-6 bg-gradient-to-br from-blue-50 to-purple-50 p-4 rounded-xl">
+       <h3 class="text-lg font-semibold text-gray-700 mb-3">📍 Send <span id="selected-char-name">Mom</span> to:</h3>
+       <div class="grid grid-cols-2 gap-2"><button class="building-btn bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-2 px-3 rounded-lg text-sm transition-all" data-building="home"> 🏠 Home </button> <button class="building-btn bg-green-400 hover:bg-green-500 text-gray-800 font-bold py-2 px-3 rounded-lg text-sm transition-all" data-building="park"> 🌳 Park </button> <button class="building-btn bg-blue-400 hover:bg-blue-500 text-gray-800 font-bold py-2 px-3 rounded-lg text-sm transition-all" data-building="store"> 🏪 Store </button> <button class="building-btn bg-red-400 hover:bg-red-500 text-gray-800 font-bold py-2 px-3 rounded-lg text-sm transition-all" data-building="school"> 🏫 School </button>
+       </div>
+      </div><!-- Wardrobe Section -->
+      <div id="wardrobe-section">
+       <h3 class="text-lg font-semibold text-gray-700 mb-3">Wardrobe:</h3><!-- Category Tabs -->
+       <div class="flex flex-wrap gap-2 mb-4"><button class="tab-btn bg-pink-500 text-white font-semibold py-2 px-3 rounded-lg text-sm shadow" data-category="tops"> 👔 Tops </button> <button class="tab-btn bg-pink-200 text-pink-800 font-semibold py-2 px-3 rounded-lg text-sm" data-category="bottoms"> 👖 Bottoms </button> <button class="tab-btn bg-pink-200 text-pink-800 font-semibold py-2 px-3 rounded-lg text-sm" data-category="hair"> 💇 Hair </button> <button class="tab-btn bg-pink-200 text-pink-800 font-semibold py-2 px-3 rounded-lg text-sm" data-category="accessories"> 👓 Accessories </button>
+       </div><!-- Clothing Items -->
+       <div id="clothing-grid" class="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto"></div>
+      </div><!-- Action Buttons -->
+      <div class="mt-6 space-y-3"><button id="reset-outfit-btn" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all"> 🔄 Reset Outfit </button> <button id="reset-all-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all"> 🏠 Reset House </button>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = {
+      game_title: "🏠 Dollhouse Family Game",
+      family_name: "The Anderson Family",
+      background_color: "#fdf2f8",
+      primary_color: "#ec4899",
+      secondary_color: "#a855f7",
+      text_color: "#9f1239",
+      accent_color: "#f472b6",
+      font_family: "system-ui",
+      font_size: 16
+    };
+
+    const characters = [
+      { id: 'mom', name: 'Mom', skin: '#fdd5b8', height: 160 },
+      { id: 'dad', name: 'Dad', skin: '#f4c4a0', height: 180 },
+      { id: 'daughter', name: 'Daughter', skin: '#fde2c8', height: 140 },
+      { id: 'son', name: 'Son', skin: '#f4d0ac', height: 145 }
+    ];
+
+    const furniture = {
+      bedroom: [
+        { id: 'lamp', name: '💡 Lamp', x: 20, y: 50 },
+        { id: 'book', name: '📚 Book', x: 80, y: 150 },
+        { id: 'pillow', name: '🛏️ Pillow', x: 150, y: 100 },
+        { id: 'clock', name: '⏰ Clock', x: 120, y: 40 }
+      ],
+      kitchen: [
+        { id: 'plate', name: '🍽️ Plate', x: 150, y: 120 },
+        { id: 'cup', name: '☕ Cup', x: 180, y: 130 },
+        { id: 'food', name: '🍕 Food', x: 200, y: 140 },
+        { id: 'pot', name: '🍳 Pot', x: 60, y: 80 }
+      ],
+      living: [
+        { id: 'remote', name: '📱 Remote', x: 80, y: 150 },
+        { id: 'plant', name: '🪴 Plant', x: 200, y: 90 },
+        { id: 'book2', name: '📖 Magazine', x: 110, y: 140 },
+        { id: 'toy', name: '🧸 Toy', x: 150, y: 170 }
+      ],
+      bathroom: [
+        { id: 'towel', name: '🧴 Towel', x: 180, y: 80 },
+        { id: 'soap', name: '🧼 Soap', x: 150, y: 110 },
+        { id: 'brush', name: '🪥 Brush', x: 120, y: 90 },
+        { id: 'duck', name: '🦆 Duck', x: 80, y: 140 }
+      ]
+    };
+
+    let furniturePositions = {};
+    
+    // Initialize furniture positions
+    Object.keys(furniture).forEach(room => {
+      furniture[room].forEach(item => {
+        furniturePositions[item.id] = { room, x: item.x, y: item.y };
+      });
+    });
+
+    const wardrobe = {
+      mom: {
+        tops: [
+          { id: 't1', name: 'Pink Blouse', color: '#ff69b4' },
+          { id: 't2', name: 'Blue Sweater', color: '#3b82f6' },
+          { id: 't3', name: 'White Shirt', color: '#ffffff', stroke: '#e5e7eb' },
+          { id: 't4', name: 'Red Top', color: '#ef4444' }
+        ],
+        bottoms: [
+          { id: 'b1', name: 'Black Skirt', color: '#1f2937' },
+          { id: 'b2', name: 'Blue Jeans', color: '#4a5568' },
+          { id: 'b3', name: 'Brown Pants', color: '#92400e' }
+        ],
+        hair: [
+          { id: 'h1', name: 'Long Blonde', color: '#f4d03f' },
+          { id: 'h2', name: 'Short Brown', color: '#8b5a3c' },
+          { id: 'h3', name: 'Black Bob', color: '#2c2c2c' }
+        ],
+        accessories: [
+          { id: 'a1', name: 'Glasses', type: 'glasses' },
+          { id: 'a2', name: 'Necklace', type: 'necklace' },
+          { id: 'a3', name: 'Hat', type: 'hat' }
+        ]
+      },
+      dad: {
+        tops: [
+          { id: 't1', name: 'Blue Shirt', color: '#3b82f6' },
+          { id: 't2', name: 'Green Polo', color: '#10b981' },
+          { id: 't3', name: 'Gray Sweater', color: '#6b7280' },
+          { id: 't4', name: 'Black Jacket', color: '#1f2937' }
+        ],
+        bottoms: [
+          { id: 'b1', name: 'Brown Pants', color: '#92400e' },
+          { id: 'b2', name: 'Blue Jeans', color: '#4a5568' },
+          { id: 'b3', name: 'Black Slacks', color: '#1f2937' }
+        ],
+        hair: [
+          { id: 'h1', name: 'Short Brown', color: '#8b5a3c' },
+          { id: 'h2', name: 'Black Hair', color: '#2c2c2c' },
+          { id: 'h3', name: 'Gray Hair', color: '#9ca3af' }
+        ],
+        accessories: [
+          { id: 'a1', name: 'Glasses', type: 'glasses' },
+          { id: 'a2', name: 'Tie', type: 'tie' },
+          { id: 'a3', name: 'Watch', type: 'watch' }
+        ]
+      },
+      daughter: {
+        tops: [
+          { id: 't1', name: 'Pink Dress', color: '#ff69b4' },
+          { id: 't2', name: 'Purple Shirt', color: '#a855f7' },
+          { id: 't3', name: 'Yellow Top', color: '#fbbf24' },
+          { id: 't4', name: 'Red Sweater', color: '#ef4444' }
+        ],
+        bottoms: [
+          { id: 'b1', name: 'Pink Skirt', color: '#ff1493' },
+          { id: 'b2', name: 'Blue Shorts', color: '#5b7c99' },
+          { id: 'b3', name: 'Purple Pants', color: '#7c3aed' }
+        ],
+        hair: [
+          { id: 'h1', name: 'Pigtails', color: '#f4d03f' },
+          { id: 'h2', name: 'Long Brown', color: '#8b5a3c' },
+          { id: 'h3', name: 'Curly Red', color: '#c44536' }
+        ],
+        accessories: [
+          { id: 'a1', name: 'Bow', type: 'bow' },
+          { id: 'a2', name: 'Crown', type: 'crown' },
+          { id: 'a3', name: 'Backpack', type: 'backpack' }
+        ]
+      },
+      son: {
+        tops: [
+          { id: 't1', name: 'Blue T-Shirt', color: '#3b82f6' },
+          { id: 't2', name: 'Red Shirt', color: '#ef4444' },
+          { id: 't3', name: 'Green Hoodie', color: '#10b981' },
+          { id: 't4', name: 'Yellow Top', color: '#fbbf24' }
+        ],
+        bottoms: [
+          { id: 'b1', name: 'Blue Jeans', color: '#4a5568' },
+          { id: 'b2', name: 'Brown Shorts', color: '#92400e' },
+          { id: 'b3', name: 'Black Pants', color: '#1f2937' }
+        ],
+        hair: [
+          { id: 'h1', name: 'Short Brown', color: '#8b5a3c' },
+          { id: 'h2', name: 'Blonde Spiky', color: '#f4d03f' },
+          { id: 'h3', name: 'Black Hair', color: '#2c2c2c' }
+        ],
+        accessories: [
+          { id: 'a1', name: 'Cap', type: 'cap' },
+          { id: 'a2', name: 'Glasses', type: 'glasses' },
+          { id: 'a3', name: 'Backpack', type: 'backpack' }
+        ]
+      }
+    };
+
+    let selectedCharacter = 'mom';
+    let currentCategory = 'tops';
+    let currentBuilding = 'home';
+    let characterOutfits = {
+      mom: { top: null, bottom: null, hair: 'h1', accessory: null },
+      dad: { top: null, bottom: null, hair: 'h1', accessory: null },
+      daughter: { top: null, bottom: null, hair: 'h1', accessory: null },
+      son: { top: null, bottom: null, hair: 'h1', accessory: null }
+    };
+    let characterRooms = {
+      mom: 'kitchen',
+      dad: 'living',
+      daughter: 'bedroom',
+      son: 'living'
+    };
+    
+    let characterBuildings = {
+      mom: 'home',
+      dad: 'home',
+      daughter: 'home',
+      son: 'home'
+    };
+
+    function renderCharacterSelection() {
+      const container = document.getElementById('character-selection');
+      container.innerHTML = characters.map(char => {
+        const location = characterBuildings[char.id];
+        const locationIcons = {
+          home: '🏠',
+          park: '🌳',
+          store: '🏪',
+          school: '🏫'
+        };
+        return `
+        <div class="text-center p-3 rounded-xl cursor-pointer transition-all ${selectedCharacter === char.id ? 'bg-pink-200 ring-2 ring-pink-500' : 'bg-gray-100 hover:bg-gray-200'}" data-character="${char.id}">
+          ${renderDollSVG(char.id, 60)}
+          <p class="text-xs font-bold mt-2">${char.name}</p>
+          <p class="text-xs text-gray-600">${locationIcons[location]}</p>
+        </div>
+      `;
+      }).join('');
+      
+      container.querySelectorAll('[data-character]').forEach(el => {
+        el.addEventListener('click', () => {
+          selectedCharacter = el.dataset.character;
+          const charName = characters.find(c => c.id === selectedCharacter).name;
+          document.getElementById('selected-char-name').textContent = charName;
+          renderCharacterSelection();
+          renderClothingGrid();
+          updateBuildingButtons();
+        });
+      });
+    }
+
+    function renderDollSVG(charId, scale = 80) {
+      const char = characters.find(c => c.id === charId);
+      const outfit = characterOutfits[charId];
+      const heightScale = char.height / 160;
+      const actualHeight = scale * heightScale;
+      
+      let svg = `<svg width="${scale}" height="${actualHeight}" viewBox="0 0 80 ${char.height}" style="display: inline-block;">`;
+      
+      // Head
+      svg += `<ellipse cx="40" cy="${char.height * 0.15}" rx="12" ry="14" fill="${char.skin}"/>`;
+      // Eyes
+      svg += `<circle cx="36" cy="${char.height * 0.14}" r="1.5" fill="#333"/>`;
+      svg += `<circle cx="44" cy="${char.height * 0.14}" r="1.5" fill="#333"/>`;
+      // Smile
+      svg += `<path d="M 36 ${char.height * 0.17} Q 40 ${char.height * 0.18} 44 ${char.height * 0.17}" stroke="#333" stroke-width="1" fill="none"/>`;
+      
+      // Hair
+      if (outfit.hair) {
+        const hairItem = wardrobe[charId].hair.find(h => h.id === outfit.hair);
+        if (hairItem) {
+          svg += `<ellipse cx="40" cy="${char.height * 0.12}" rx="13" ry="10" fill="${hairItem.color}"/>`;
+        }
+      }
+      
+      // Accessory
+      if (outfit.accessory) {
+        const acc = wardrobe[charId].accessories.find(a => a.id === outfit.accessory);
+        if (acc) {
+          if (acc.type === 'glasses') {
+            svg += `<circle cx="36" cy="${char.height * 0.14}" r="3" fill="none" stroke="#333" stroke-width="1"/>`;
+            svg += `<circle cx="44" cy="${char.height * 0.14}" r="3" fill="none" stroke="#333" stroke-width="1"/>`;
+          } else if (acc.type === 'bow') {
+            svg += `<path d="M 32 ${char.height * 0.1} L 36 ${char.height * 0.12} L 40 ${char.height * 0.1} L 44 ${char.height * 0.12} L 48 ${char.height * 0.1}" fill="#ff1493"/>`;
+          } else if (acc.type === 'crown') {
+            svg += `<path d="M 30 ${char.height * 0.08} L 34 ${char.height * 0.11} L 40 ${char.height * 0.07} L 46 ${char.height * 0.11} L 50 ${char.height * 0.08}" fill="#fbbf24"/>`;
+          } else if (acc.type === 'cap') {
+            svg += `<ellipse cx="40" cy="${char.height * 0.1}" rx="14" ry="6" fill="#3b82f6"/>`;
+            svg += `<ellipse cx="48" cy="${char.height * 0.11}" rx="8" ry="3" fill="#2563eb"/>`;
+          } else if (acc.type === 'hat') {
+            svg += `<rect x="28" y="${char.height * 0.08}" width="24" height="6" fill="#8b5a3c"/>`;
+            svg += `<ellipse cx="40" cy="${char.height * 0.08}" rx="12" ry="4" fill="#a16d4a"/>`;
+          }
+        }
+      }
+      
+      // Neck
+      svg += `<rect x="35" y="${char.height * 0.25}" width="10" height="8" fill="${char.skin}"/>`;
+      
+      // Body/Top
+      const topY = char.height * 0.3;
+      const topHeight = char.height * 0.35;
+      if (outfit.top) {
+        const topItem = wardrobe[charId].tops.find(t => t.id === outfit.top);
+        if (topItem) {
+          svg += `<rect x="25" y="${topY}" width="30" height="${topHeight}" rx="3" fill="${topItem.color}" ${topItem.stroke ? `stroke="${topItem.stroke}" stroke-width="1"` : ''}/>`;
+          // Arms
+          svg += `<rect x="18" y="${topY + 5}" width="7" height="${topHeight * 0.7}" rx="3" fill="${topItem.color}"/>`;
+          svg += `<rect x="55" y="${topY + 5}" width="7" height="${topHeight * 0.7}" rx="3" fill="${topItem.color}"/>`;
+        }
+      } else {
+        svg += `<rect x="25" y="${topY}" width="30" height="${topHeight}" rx="3" fill="${char.skin}"/>`;
+        svg += `<rect x="18" y="${topY + 5}" width="7" height="${topHeight * 0.7}" rx="3" fill="${char.skin}"/>`;
+        svg += `<rect x="55" y="${topY + 5}" width="7" height="${topHeight * 0.7}" rx="3" fill="${char.skin}"/>`;
+      }
+      
+      // Bottom/Legs
+      const bottomY = topY + topHeight;
+      const legHeight = char.height - bottomY - 2;
+      if (outfit.bottom) {
+        const bottomItem = wardrobe[charId].bottoms.find(b => b.id === outfit.bottom);
+        if (bottomItem) {
+          svg += `<rect x="28" y="${bottomY}" width="10" height="${legHeight}" rx="5" fill="${bottomItem.color}"/>`;
+          svg += `<rect x="42" y="${bottomY}" width="10" height="${legHeight}" rx="5" fill="${bottomItem.color}"/>`;
+        }
+      } else {
+        svg += `<rect x="28" y="${bottomY}" width="10" height="${legHeight}" rx="5" fill="${char.skin}"/>`;
+        svg += `<rect x="42" y="${bottomY}" width="10" height="${legHeight}" rx="5" fill="${char.skin}"/>`;
+      }
+      
+      // Shoes
+      svg += `<ellipse cx="33" cy="${char.height - 2}" rx="6" ry="3" fill="#333"/>`;
+      svg += `<ellipse cx="47" cy="${char.height - 2}" rx="6" ry="3" fill="#333"/>`;
+      
+      svg += `</svg>`;
+      return svg;
+    }
+
+    function renderClothingGrid() {
+      const grid = document.getElementById('clothing-grid');
+      const items = wardrobe[selectedCharacter][currentCategory];
+      const outfitKey = currentCategory === 'tops' ? 'top' : currentCategory === 'bottoms' ? 'bottom' : currentCategory === 'hair' ? 'hair' : 'accessory';
+      
+      grid.innerHTML = items.map(item => {
+        const isSelected = characterOutfits[selectedCharacter][outfitKey] === item.id;
+        return `
+          <div class="clothing-item ${isSelected ? 'selected' : ''} bg-gradient-to-br from-pink-50 to-purple-50 rounded-lg p-3 text-center" data-item="${item.id}">
+            <div class="w-full h-12 rounded mb-2 flex items-center justify-center" style="background: ${item.color || '#f3f4f6'}">
+              ${item.type ? getAccessoryIcon(item.type) : ''}
+            </div>
+            <p class="text-xs font-semibold text-gray-700">${item.name}</p>
+          </div>
+        `;
+      }).join('');
+      
+      grid.querySelectorAll('.clothing-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const itemId = el.dataset.item;
+          const outfitKey = currentCategory === 'tops' ? 'top' : currentCategory === 'bottoms' ? 'bottom' : currentCategory === 'hair' ? 'hair' : 'accessory';
+          
+          if (characterOutfits[selectedCharacter][outfitKey] === itemId) {
+            characterOutfits[selectedCharacter][outfitKey] = null;
+          } else {
+            characterOutfits[selectedCharacter][outfitKey] = itemId;
+          }
+          
+          renderClothingGrid();
+          updateDollsInRooms();
+        });
+      });
+    }
+
+    function getAccessoryIcon(type) {
+      const icons = {
+        glasses: '👓',
+        necklace: '📿',
+        hat: '👒',
+        tie: '👔',
+        watch: '⌚',
+        bow: '🎀',
+        crown: '👑',
+        backpack: '🎒',
+        cap: '🧢'
+      };
+      return `<span style="font-size: 24px">${icons[type] || '✨'}</span>`;
+    }
+
+    function updateDollsInRooms() {
+      ['bedroom', 'kitchen', 'living', 'bathroom'].forEach(room => {
+        const container = document.getElementById(`${room}-dolls`);
+        const dollsInRoom = characters.filter(char => 
+          characterRooms[char.id] === room && characterBuildings[char.id] === currentBuilding
+        );
+        container.innerHTML = dollsInRoom.map(char => 
+          `<div class="doll-character" draggable="true" data-character="${char.id}">${renderDollSVG(char.id)}</div>`
+        ).join('');
+        
+        // Add drag event listeners
+        container.querySelectorAll('.doll-character').forEach(doll => {
+          doll.addEventListener('dragstart', handleDragStart);
+          doll.addEventListener('dragend', handleDragEnd);
+        });
+      });
+      
+      // Render furniture items
+      renderFurniture();
+    }
+
+    function renderFurniture() {
+      ['bedroom', 'kitchen', 'living', 'bathroom'].forEach(room => {
+        const roomElement = document.querySelector(`.room[data-room="${room}"]`);
+        
+        // Remove existing furniture items
+        roomElement.querySelectorAll('.furniture-item').forEach(item => item.remove());
+        
+        // Add furniture for this room
+        Object.values(furniture[room]).forEach(item => {
+          const pos = furniturePositions[item.id];
+          if (pos.room === room) {
+            const furnitureEl = document.createElement('div');
+            furnitureEl.className = 'furniture-item';
+            furnitureEl.draggable = true;
+            furnitureEl.dataset.furniture = item.id;
+            furnitureEl.style.left = `${pos.x}px`;
+            furnitureEl.style.top = `${pos.y}px`;
+            furnitureEl.style.fontSize = '32px';
+            furnitureEl.style.cursor = 'grab';
+            furnitureEl.textContent = item.name.split(' ')[0];
+            furnitureEl.title = item.name;
+            
+            furnitureEl.addEventListener('dragstart', handleFurnitureDragStart);
+            furnitureEl.addEventListener('dragend', handleDragEnd);
+            
+            roomElement.appendChild(furnitureEl);
+          }
+        });
+      });
+    }
+
+    let draggedCharacter = null;
+    let draggedFurniture = null;
+
+    function handleDragStart(e) {
+      draggedCharacter = e.target.dataset.character;
+      draggedFurniture = null;
+      e.target.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/html', e.target.innerHTML);
+    }
+
+    function handleFurnitureDragStart(e) {
+      draggedFurniture = e.target.dataset.furniture;
+      draggedCharacter = null;
+      e.target.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/html', e.target.innerHTML);
+    }
+
+    function handleDragEnd(e) {
+      e.target.classList.remove('dragging');
+    }
+
+    function handleDragOver(e) {
+      if (e.preventDefault) {
+        e.preventDefault();
+      }
+      e.dataTransfer.dropEffect = 'move';
+      return false;
+    }
+
+    function handleDrop(e) {
+      if (e.stopPropagation) {
+        e.stopPropagation();
+      }
+      
+      const roomName = e.currentTarget.dataset.room;
+      
+      if (draggedCharacter && roomName) {
+        characterRooms[draggedCharacter] = roomName;
+        updateDollsInRooms();
+        
+        e.currentTarget.classList.add('active');
+        setTimeout(() => e.currentTarget.classList.remove('active'), 500);
+      } else if (draggedFurniture && roomName) {
+        // Move furniture to new room
+        furniturePositions[draggedFurniture] = {
+          room: roomName,
+          x: Math.min(Math.max(20, e.offsetX - 16), 220),
+          y: Math.min(Math.max(30, e.offsetY - 16), 240)
+        };
+        renderFurniture();
+        
+        e.currentTarget.classList.add('active');
+        setTimeout(() => e.currentTarget.classList.remove('active'), 500);
+      }
+      
+      return false;
+    }
+
+    document.querySelectorAll('.room').forEach(room => {
+      room.addEventListener('click', (e) => {
+        if (e.target.closest('.doll-character')) return;
+        const roomName = room.dataset.room;
+        characterRooms[selectedCharacter] = roomName;
+        updateDollsInRooms();
+        
+        document.querySelectorAll('.room').forEach(r => r.classList.remove('active'));
+        room.classList.add('active');
+        setTimeout(() => room.classList.remove('active'), 500);
+      });
+      
+      // Add drag and drop support
+      room.addEventListener('dragover', handleDragOver);
+      room.addEventListener('drop', handleDrop);
+    });
+
+    function updateRoomsForBuilding(building) {
+      currentBuilding = building;
+      const room3Label = document.getElementById('room-3-label');
+      const room4Label = document.getElementById('room-4-label');
+      const room3Furn1 = document.getElementById('room-3-furniture-1');
+      const room3Furn2 = document.getElementById('room-3-furniture-2');
+      const room4Furn1 = document.getElementById('room-4-furniture-1');
+      const room4Furn2 = document.getElementById('room-4-furniture-2');
+      const livingRoom = document.querySelector('.room[data-room="living"]');
+      const bathroomRoom = document.querySelector('.room[data-room="bathroom"]');
+      
+      if (building === 'home') {
+        document.getElementById('current-location').textContent = '🏠 Anderson Home';
+        room3Label.textContent = '📺 LIVING ROOM';
+        room4Label.textContent = '🛁 BATHROOM';
+        livingRoom.className = 'room living-bg';
+        bathroomRoom.className = 'room bathroom-bg';
+        
+        room3Furn1.innerHTML = '<rect x="5" y="15" width="70" height="20" rx="3" fill="#3b82f6"/><rect x="0" y="10" width="10" height="25" rx="2" fill="#2563eb"/><rect x="70" y="10" width="10" height="25" rx="2" fill="#2563eb"/><rect x="10" y="8" width="60" height="10" rx="2" fill="#60a5fa"/>';
+        room3Furn2.innerHTML = '<rect x="8" y="0" width="34" height="25" rx="2" fill="#1f2937"/><rect x="10" y="2" width="30" height="21" fill="#3b82f6"/><rect x="20" y="25" width="10" height="8" fill="#4b5563"/><rect x="5" y="33" width="40" height="3" rx="1" fill="#6b7280"/>';
+        room4Furn1.innerHTML = '<ellipse cx="30" cy="20" rx="28" ry="12" fill="#e0f2fe"/><rect x="2" y="20" width="56" height="10" fill="#bae6fd"/><circle cx="5" cy="30" r="3" fill="#0891b2"/><circle cx="55" cy="30" r="3" fill="#0891b2"/>';
+        room4Furn2.innerHTML = '<rect x="0" y="15" width="40" height="3" fill="#94a3b8"/><ellipse cx="20" cy="20" rx="15" ry="8" fill="#f1f5f9"/><rect x="18" y="8" width="4" height="12" fill="#cbd5e1"/><path d="M 20 0 L 18 8 L 22 8 Z" fill="#94a3b8"/>';
+      } else if (building === 'park') {
+        document.getElementById('current-location').textContent = '🌳 City Park';
+        room3Label.textContent = '🌳 PARK AREA';
+        room4Label.textContent = '🎮 PLAYGROUND';
+        livingRoom.className = 'room';
+        livingRoom.style.background = 'linear-gradient(180deg, #86efac 0%, #4ade80 100%)';
+        bathroomRoom.className = 'room';
+        bathroomRoom.style.background = 'linear-gradient(180deg, #fde68a 0%, #fcd34d 100%)';
+        
+        room3Furn1.innerHTML = '<circle cx="20" cy="20" r="18" fill="#16a34a"/><rect x="16" y="20" width="8" height="20" fill="#92400e"/>';
+        room3Furn2.innerHTML = '<circle cx="25" cy="15" r="15" fill="#15803d"/><rect x="21" y="15" width="8" height="18" fill="#78350f"/>';
+        room4Furn1.innerHTML = '<rect x="10" y="10" width="8" height="15" fill="#b91c1c"/><rect x="10" y="5" width="8" height="5" rx="4" fill="#dc2626"/>';
+        room4Furn2.innerHTML = '<rect x="5" y="15" width="50" height="4" fill="#78350f"/><rect x="8" y="10" width="3" height="10" fill="#92400e"/><rect x="45" y="10" width="3" height="10" fill="#92400e"/>';
+      } else if (building === 'store') {
+        document.getElementById('current-location').textContent = '🏪 Anderson Store';
+        room3Label.textContent = '🛒 SHOPPING AREA';
+        room4Label.textContent = '💰 CHECKOUT';
+        livingRoom.className = 'room';
+        livingRoom.style.background = 'linear-gradient(180deg, #fef3c7 0%, #fde68a 100%)';
+        bathroomRoom.className = 'room';
+        bathroomRoom.style.background = 'linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%)';
+        
+        room3Furn1.innerHTML = '<rect x="5" y="5" width="25" height="30" fill="#92400e"/><rect x="10" y="10" width="15" height="5" fill="#fef3c7"/><rect x="10" y="18" width="15" height="5" fill="#fef3c7"/><rect x="10" y="26" width="15" height="5" fill="#fef3c7"/>';
+        room3Furn2.innerHTML = '<circle cx="25" cy="25" r="12" fill="#f59e0b"/><circle cx="25" cy="25" r="8" fill="#fbbf24"/>';
+        room4Furn1.innerHTML = '<rect x="10" y="10" width="40" height="15" fill="#7c2d12"/><rect x="12" y="12" width="36" height="11" fill="#92400e"/>';
+        room4Furn2.innerHTML = '<rect x="15" y="5" width="20" height="25" fill="#6b7280"/><rect x="17" y="7" width="16" height="15" fill="#9ca3af"/>';
+      } else if (building === 'school') {
+        document.getElementById('current-location').textContent = '🏫 Anderson School';
+        room3Label.textContent = '📚 CLASSROOM';
+        room4Label.textContent = '📖 LIBRARY';
+        livingRoom.className = 'room';
+        livingRoom.style.background = 'linear-gradient(180deg, #fef3c7 0%, #fde68a 100%)';
+        bathroomRoom.className = 'room';
+        bathroomRoom.style.background = 'linear-gradient(180deg, #e0e7ff 0%, #c7d2fe 100%)';
+        
+        room3Furn1.innerHTML = '<rect x="10" y="15" width="60" height="20" fill="#92400e"/><rect x="10" y="10" width="60" height="5" fill="#78350f"/>';
+        room3Furn2.innerHTML = '<rect x="5" y="5" width="40" height="30" fill="#1f2937"/><rect x="8" y="8" width="34" height="24" fill="#059669"/>';
+        room4Furn1.innerHTML = '<rect x="5" y="5" width="20" height="28" fill="#92400e"/><rect x="8" y="8" width="14" height="4" fill="#dc2626"/><rect x="8" y="14" width="14" height="4" fill="#2563eb"/><rect x="8" y="20" width="14" height="4" fill="#16a34a"/>';
+        room4Furn2.innerHTML = '<rect x="30" y="5" width="20" height="28" fill="#92400e"/><rect x="33" y="8" width="14" height="4" fill="#f59e0b"/><rect x="33" y="14" width="14" height="4" fill="#a855f7"/><rect x="33" y="20" width="14" height="4" fill="#ec4899"/>';
+      }
+    }
+
+    // Building click handlers
+    document.querySelectorAll('.building').forEach(building => {
+      building.addEventListener('click', () => {
+        const buildingType = building.dataset.building;
+        updateRoomsForBuilding(buildingType);
+        document.getElementById('city-view').classList.add('hidden');
+        document.getElementById('interior-view').classList.remove('hidden');
+        updateDollsInRooms();
+      });
+    });
+
+    // Building button handlers for character placement
+    function updateBuildingButtons() {
+      document.querySelectorAll('.building-btn').forEach(btn => {
+        const building = btn.dataset.building;
+        if (characterBuildings[selectedCharacter] === building) {
+          btn.classList.add('ring-4', 'ring-pink-500');
+        } else {
+          btn.classList.remove('ring-4', 'ring-pink-500');
+        }
+      });
+    }
+
+    document.querySelectorAll('.building-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const building = btn.dataset.building;
+        characterBuildings[selectedCharacter] = building;
+        
+        // If we're currently viewing this building, update the display
+        if (currentBuilding === building) {
+          updateDollsInRooms();
+        }
+        
+        renderCharacterSelection();
+        updateBuildingButtons();
+      });
+    });
+
+    // Back to city button
+    document.getElementById('back-to-city').addEventListener('click', () => {
+      document.getElementById('city-view').classList.remove('hidden');
+      document.getElementById('interior-view').classList.add('hidden');
+    });
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+          b.classList.remove('bg-pink-500', 'text-white', 'shadow');
+          b.classList.add('bg-pink-200', 'text-pink-800');
+        });
+        btn.classList.remove('bg-pink-200', 'text-pink-800');
+        btn.classList.add('bg-pink-500', 'text-white', 'shadow');
+        
+        currentCategory = btn.dataset.category;
+        renderClothingGrid();
+      });
+    });
+
+    document.getElementById('reset-outfit-btn').addEventListener('click', () => {
+      characterOutfits[selectedCharacter] = { top: null, bottom: null, hair: 'h1', accessory: null };
+      renderClothingGrid();
+      updateDollsInRooms();
+    });
+
+    document.getElementById('reset-all-btn').addEventListener('click', () => {
+      characterOutfits = {
+        mom: { top: null, bottom: null, hair: 'h1', accessory: null },
+        dad: { top: null, bottom: null, hair: 'h1', accessory: null },
+        daughter: { top: null, bottom: null, hair: 'h1', accessory: null },
+        son: { top: null, bottom: null, hair: 'h1', accessory: null }
+      };
+      characterRooms = {
+        mom: 'kitchen',
+        dad: 'living',
+        daughter: 'bedroom',
+        son: 'living'
+      };
+      characterBuildings = {
+        mom: 'home',
+        dad: 'home',
+        daughter: 'home',
+        son: 'home'
+      };
+      
+      // Reset furniture positions
+      Object.keys(furniture).forEach(room => {
+        furniture[room].forEach(item => {
+          furniturePositions[item.id] = { room, x: item.x, y: item.y };
+        });
+      });
+      
+      renderClothingGrid();
+      renderCharacterSelection();
+      updateDollsInRooms();
+      updateBuildingButtons();
+    });
+
+    async function onConfigChange(config) {
+      const baseSize = config.font_size || defaultConfig.font_size;
+      const customFont = config.font_family || defaultConfig.font_family;
+      const baseFontStack = 'system-ui, -apple-system, sans-serif';
+      
+      document.getElementById('game-title').textContent = config.game_title || defaultConfig.game_title;
+      document.getElementById('game-title').style.fontSize = `${baseSize * 2.5}px`;
+      document.getElementById('game-title').style.fontFamily = `${customFont}, ${baseFontStack}`;
+      document.getElementById('game-title').style.color = config.text_color || defaultConfig.text_color;
+      
+      document.getElementById('family-name').textContent = config.family_name || defaultConfig.family_name;
+      document.getElementById('family-name').style.fontSize = `${baseSize * 1.5}px`;
+      document.getElementById('family-name').style.fontFamily = `${customFont}, ${baseFontStack}`;
+      document.getElementById('family-name').style.color = config.secondary_color || defaultConfig.secondary_color;
+    }
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities: (config) => ({
+          recolorables: [
+            {
+              get: () => config.background_color || defaultConfig.background_color,
+              set: (value) => {
+                config.background_color = value;
+                window.elementSdk.setConfig({ background_color: value });
+              }
+            },
+            {
+              get: () => config.primary_color || defaultConfig.primary_color,
+              set: (value) => {
+                config.primary_color = value;
+                window.elementSdk.setConfig({ primary_color: value });
+              }
+            },
+            {
+              get: () => config.text_color || defaultConfig.text_color,
+              set: (value) => {
+                config.text_color = value;
+                window.elementSdk.setConfig({ text_color: value });
+              }
+            },
+            {
+              get: () => config.secondary_color || defaultConfig.secondary_color,
+              set: (value) => {
+                config.secondary_color = value;
+                window.elementSdk.setConfig({ secondary_color: value });
+              }
+            },
+            {
+              get: () => config.accent_color || defaultConfig.accent_color,
+              set: (value) => {
+                config.accent_color = value;
+                window.elementSdk.setConfig({ accent_color: value });
+              }
+            }
+          ],
+          borderables: [],
+          fontEditable: {
+            get: () => config.font_family || defaultConfig.font_family,
+            set: (value) => {
+              config.font_family = value;
+              window.elementSdk.setConfig({ font_family: value });
+            }
+          },
+          fontSizeable: {
+            get: () => config.font_size || defaultConfig.font_size,
+            set: (value) => {
+              config.font_size = value;
+              window.elementSdk.setConfig({ font_size: value });
+            }
+          }
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ["game_title", config.game_title || defaultConfig.game_title],
+          ["family_name", config.family_name || defaultConfig.family_name]
+        ])
+      });
+    }
+
+    renderCharacterSelection();
+    renderClothingGrid();
+    updateDollsInRooms();
+    updateBuildingButtons();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b5edd5ac042c57b',t:'MTc2NzA2OTY4NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
