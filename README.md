@@ -33,3 +33,6 @@
 
 ### Random Number(s) Generator
 ```1. randNumgenerator.html```
+
+### Doll-Life Simulator
+```1. doll-life.html```
